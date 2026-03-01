@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+<title>🎮 Party Blitz</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+  :root {
+    --bg0: #080814;
+    --bg1: #0f0f22;
+    --bg2: #1a1a35;
+    --bg3: #252548;
+    --accent: #7c3aed;
+    --accent2: #06d6a0;
+    --accent3: #f72585;
+    --gold: #f1c40f;
+    --text: #e8e8ff;
+    --dim: #7878aa;
+    --border: #2e2e5c;
+    --shadow: rgba(124,58,237,0.4);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg0); font-family: 'Rajdhani', sans-serif; color: var(--text); }
+
+  /* Animated star bg */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(124,58,237,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(6,214,160,0.05) 0%, transparent 50%),
+                radial-gradient(ellipse at 60% 80%, rgba(247,37,133,0.05) 0%, transparent 50%);
+  }
+
+  /* ─── Screens ─── */
+  .screen { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 10; }
+  .screen.hidden { display: none; }
+
+  /* ─── HOME SCREEN ─── */
+  #screen_home { flex-direction: column; gap: 0; padding: 20px; }
+
+  .home-inner {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px; width: 100%; max-width: 960px; max-height: 100vh; overflow-y: auto;
+  }
+
+  .game-title {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(28px, 6vw, 56px);
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(135deg, #7c3aed, #06d6a0, #f72585);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    animation: titleGlow 3s ease-in-out infinite alternate;
+    line-height: 1;
+    margin-bottom: 2px;
+  }
+  .game-subtitle { color: var(--dim); font-size: 13px; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; }
+
+  @keyframes titleGlow {
+    from { filter: brightness(1); }
+    to   { filter: brightness(1.3) drop-shadow(0 0 20px #7c3aed); }
+  }
+
+  .home-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    width: 100%;
+  }
+  @media (max-width: 600px) { .home-grid { grid-template-columns: 1fr; } }
+
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scanline 3s linear infinite;
+  }
+  @keyframes scanline { from { transform: translateX(-100%); } to { transform: translateX(100%); } }
+
+  .card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 12px;
+  }
+
+  /* Customization */
+  .cust-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .cust-label { font-size: 12px; color: var(--dim); width: 50px; }
+  input[type="text"] {
+    flex: 1; background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 7px 10px; font-family: inherit; font-size: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  input[type="color"] { width: 38px; height: 32px; border: none; background: none; cursor: pointer; border-radius: 6px; }
+  .color-preview {
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 2px solid var(--border); flex-shrink: 0;
+  }
+
+  .acc-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+  .acc-btn {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); padding: 6px 10px; font-size: 12px; font-family: inherit;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .acc-btn:hover { border-color: var(--accent); background: var(--bg3); }
+  .acc-btn.selected { border-color: var(--accent2); background: rgba(6,214,160,0.15); color: var(--accent2); }
+
+  /* Play buttons */
+  .play-section { display: flex; flex-direction: column; gap: 10px; }
+  .btn {
+    width: 100%; padding: 12px 20px; border: none; border-radius: 8px;
+    font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700;
+    letter-spacing: 1px; cursor: pointer; transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #5b21b6);
+    color: #fff;
+    box-shadow: 0 4px 20px var(--shadow);
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--shadow); }
+  .btn-secondary {
+    background: var(--bg3); color: var(--accent2);
+    border: 1px solid var(--accent2);
+  }
+  .btn-secondary:hover { background: rgba(6,214,160,0.1); }
+  .btn-ghost {
+    background: transparent; color: var(--dim);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: var(--dim); color: var(--text); }
+  .btn-danger {
+    background: linear-gradient(135deg, #f72585, #c2185b);
+    color: #fff;
+  }
+
+  .join-row { display: flex; gap: 8px; }
+  .join-row input { flex: 1; letter-spacing: 4px; text-align: center; font-family: 'Orbitron', monospace; font-size: 18px; }
+
+  /* Settings button */
+  #settingsBtn {
+    position: fixed; top: 14px; right: 14px; z-index: 100;
+    width: 40px; height: 40px; border-radius: 50%;
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--dim); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  #settingsBtn:hover { color: var(--text); border-color: var(--accent); transform: rotate(45deg); }
+
+  /* Settings Panel */
+  #settingsPanel {
+    position: fixed; top: 60px; right: 14px; z-index: 200;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 20px; width: 280px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  #settingsPanel.hidden { display: none; }
+  .settings-title {
+    font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .settings-close { cursor: pointer; color: var(--dim); font-size: 16px; }
+  .settings-close:hover { color: var(--text); }
+
+  .setting-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+  .setting-row label { font-size: 13px; color: var(--dim); }
+  input[type="range"] {
+    width: 100px; accent-color: var(--accent);
+  }
+  .bind-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .bind-row label { font-size: 12px; color: var(--dim); }
+  .bind-btn {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); padding: 4px 10px; font-family: 'Orbitron', monospace;
+    font-size: 11px; cursor: pointer; min-width: 60px; text-align: center;
+  }
+  .bind-btn.listening { border-color: var(--accent3); color: var(--accent3); animation: blink 0.5s infinite; }
+  @keyframes blink { 50% { opacity: 0.4; } }
+  .settings-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+  /* ─── LOBBY SCREEN ─── */
+  #screen_lobby { align-items: center; justify-content: center; }
+  .lobby-inner {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px; width: 100%; max-width: 500px; padding: 20px;
+  }
+  .lobby-code-box {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 24px;
+  }
+  .lobby-code-label { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: 2px; }
+  #roomCodeDisplay {
+    font-family: 'Orbitron', monospace; font-size: 36px; font-weight: 900;
+    color: var(--gold); letter-spacing: 8px;
+  }
+  #copyCodeBtn { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--dim); padding: 6px 10px; cursor: pointer; font-size: 16px; }
+  #copyCodeBtn:hover { color: var(--text); border-color: var(--dim); }
+
+  .lobby-players-box {
+    width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+  }
+  .lobby-box-title { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; margin-bottom: 10px; }
+  #playerList { display: flex; flex-direction: column; gap: 6px; min-height: 40px; }
+  .lobby-player {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3); border-radius: 8px; padding: 8px 12px;
+    font-size: 14px;
+  }
+  .lobby-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--pc, #fff); flex-shrink: 0;
+    box-shadow: 0 0 8px var(--pc, #fff);
+  }
+  .lobby-acc { color: var(--dim); font-size: 11px; margin-left: auto; }
+  .host-badge {
+    font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 1px;
+    background: rgba(241,196,15,0.15); color: var(--gold);
+    border: 1px solid var(--gold); border-radius: 4px; padding: 2px 6px;
+    margin-left: 6px;
+  }
+  #startBtn { width: 100%; }
+  #startBtn.hidden { display: none; }
+
+  /* ─── GAME SCREEN ─── */
+  #screen_game { background: #000; padding: 0; }
+  #canvasContainer {
+    position: relative; width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  #gameCanvas {
+    display: block;
+    image-rendering: pixelated;
+  }
+
+  /* Game overlays */
+  .game-overlay {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(8,8,20,0.85); backdrop-filter: blur(4px);
+  }
+  .game-overlay.hidden { display: none; }
+
+  #countdownOverlay { gap: 10px; }
+  .cdo-mg { font-family: 'Orbitron', monospace; font-size: 18px; color: var(--accent2); letter-spacing: 2px; }
+  .cdo-desc { font-size: 14px; color: var(--dim); text-align: center; max-width: 400px; }
+  #countdownNum {
+    font-family: 'Orbitron', monospace; font-size: 100px; font-weight: 900; color: #fff;
+    text-shadow: 0 0 40px var(--accent);
+    animation: countPulse 1s ease-in-out;
+  }
+  @keyframes countPulse { 0% { transform: scale(1.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+  #resultsOverlay { gap: 14px; max-width: 500px; padding: 30px; width: 100%; position: fixed; inset: auto; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; z-index: 60; }
+  #resultsOverlay.hidden { display: none; }
+  #resultsTitle { font-family: 'Orbitron', monospace; font-size: 16px; color: var(--gold); text-align: center; }
+
+  .results-section-label { font-size: 10px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; align-self: flex-start; }
+  #resultsList, #tournamentScoresList { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+  .result-entry {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--bg3); border-radius: 8px; padding: 8px 14px;
+    border-left: 3px solid var(--pc, #fff);
+  }
+  .medal { font-size: 18px; }
+  .rname { flex: 1; font-size: 14px; font-weight: 600; }
+  .rscore { font-family: 'Orbitron', monospace; font-size: 13px; color: var(--accent2); }
+  .tscore-entry {
+    display: flex; justify-content: space-between;
+    padding: 6px 12px; background: var(--bg3); border-radius: 6px;
+    font-size: 13px; border-left: 3px solid var(--pc, #444);
+  }
+  .results-divider { width: 100%; border: none; border-top: 1px solid var(--border); }
+
+  /* ─── PODIUM SCREEN ─── */
+  #screen_podium { flex-direction: column; gap: 24px; padding: 24px; z-index: 50; background: rgba(8,8,20,0.95); }
+  .podium-title { font-family: 'Orbitron', monospace; font-size: 28px; font-weight: 900; color: var(--gold); text-align: center; text-shadow: 0 0 30px var(--gold); }
+  #podiumPlayers { display: flex; justify-content: center; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+  .podium-entry {
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    background: var(--bg2); border: 1px solid var(--pc, var(--border));
+    border-radius: 12px; padding: 20px 28px;
+    box-shadow: 0 0 30px var(--pc, transparent);
+  }
+  .podium-entry:first-child { transform: scale(1.12); }
+  .podium-medal { font-size: 36px; }
+  .podium-name { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--text); }
+  .podium-score { font-size: 20px; font-weight: 700; color: var(--pc, var(--gold)); }
+
+  /* ─── Game Controls ─── */
+  #gameControls {
+    position: fixed; top: 10px; left: 10px; z-index: 80;
+    display: flex; gap: 8px;
+  }
+  #gameControls.hidden { display: none; }
+  .game-ctrl-btn {
+    background: rgba(8,8,20,0.8); border: 1px solid var(--border);
+    color: var(--dim); padding: 6px 12px; border-radius: 6px;
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; cursor: pointer;
+  }
+  .game-ctrl-btn:hover { color: var(--text); border-color: var(--dim); }
+
+  /* ─── Virtual Joystick ─── */
+  #joystickArea {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    z-index: 80; display: none; align-items: center; gap: 20px;
+  }
+  #joystickArea.hidden { display: none !important; }
+  @media (pointer: coarse) { #joystickArea { display: flex !important; } }
+  #joystick {
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.15);
+    display: flex; align-items: center; justify-content: center;
+    touch-action: none; user-select: none;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+  }
+  #joystickThumb {
+    width: 42px; height: 42px; border-radius: 50%;
+    background: rgba(124,58,237,0.7); border: 2px solid var(--accent);
+    transition: transform 0.05s; pointer-events: none;
+    box-shadow: 0 0 15px var(--accent);
+  }
+
+  /* ─── Toast ─── */
+  #toast {
+    position: fixed; bottom: 24px; right: 24px; z-index: 300;
+    padding: 10px 20px; border-radius: 8px;
+    background: var(--bg2); border: 1px solid var(--border);
+    font-size: 14px; color: var(--text);
+    transform: translateY(60px) scale(0.9); opacity: 0;
+    transition: all 0.25s ease;
+    pointer-events: none;
+  }
+  #toast.show { transform: translateY(0) scale(1); opacity: 1; }
+  #toast.error { border-color: var(--accent3); color: var(--accent3); }
+  #toast.info { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ─── Scrollbar ─── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg1); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ─── Animations ─── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .card { animation: fadeIn 0.4s ease backwards; }
+  .card:nth-child(1) { animation-delay: 0.05s; }
+  .card:nth-child(2) { animation-delay: 0.1s; }
+  .card:nth-child(3) { animation-delay: 0.15s; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SETTINGS BUTTON ═══ -->
+<button id="settingsBtn" title="Settings">⚙</button>
+
+<!-- ═══ SETTINGS PANEL ═══ -->
+<div id="settingsPanel" class="hidden">
+  <div class="settings-title">
+    ⚙ Settings
+    <span id="closeSettings" class="settings-close">✕</span>
+  </div>
+
+  <div style="font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">Volume</div>
+  <div class="setting-row">
+    <label>Master</label>
+    <input type="range" id="vol_master" min="0" max="1" step="0.05">
+  </div>
+  <div class="setting-row">
+    <label>Music</label>
+    <input type="range" id="vol_music" min="0" max="1" step="0.05">
+  </div>
+  <div class="setting-row">
+    <label>SFX</label>
+    <input type="range" id="vol_sfx" min="0" max="1" step="0.05">
+  </div>
+
+  <hr class="settings-divider">
+  <div style="font-size:10px;letter-spacing:2px;color:var(--dim);text-transform:uppercase;margin-bottom:8px;">Keybinds</div>
+  <div class="bind-row"><label>Up</label>     <button class="bind-btn" id="bind_up"    data-dir="up">W</button></div>
+  <div class="bind-row"><label>Down</label>   <button class="bind-btn" id="bind_down"  data-dir="down">S</button></div>
+  <div class="bind-row"><label>Left</label>   <button class="bind-btn" id="bind_left"  data-dir="left">A</button></div>
+  <div class="bind-row"><label>Right</label>  <button class="bind-btn" id="bind_right" data-dir="right">D</button></div>
+</div>
+
+<!-- ═══ HOME SCREEN ═══ -->
+<div class="screen" id="screen_home">
+  <div class="home-inner">
+    <div class="game-title">PARTY BLITZ</div>
+    <div class="game-subtitle">Multiplayer Tournament Party Game</div>
+
+    <div class="home-grid">
+
+      <!-- Customization Station -->
+      <div class="card">
+        <div class="card-title">🎨 Customization Station</div>
+        <div class="cust-row">
+          <span class="cust-label">Name</span>
+          <input type="text" id="nameInput" maxlength="12" placeholder="Your name…">
+        </div>
+        <div class="cust-row">
+          <span class="cust-label">Color</span>
+          <input type="color" id="colorPicker" value="#e74c3c">
+          <div class="color-preview" id="colorPreview" style="background:#e74c3c;"></div>
+          <script>
+            document.getElementById('colorPreview').style.background =
+              localStorage.getItem('pg_color') || '#e74c3c';
+          </script>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:6px;letter-spacing:1px;">ACCESSORY</div>
+        <div class="acc-grid">
+          <button class="acc-btn" data-acc="none">None</button>
+          <button class="acc-btn" data-acc="hat">🎩 Hat</button>
+          <button class="acc-btn" data-acc="crown">👑 Crown</button>
+          <button class="acc-btn" data-acc="horns">😈 Horns</button>
+          <button class="acc-btn" data-acc="bunny">🐰 Bunny</button>
+          <button class="acc-btn" data-acc="halo">😇 Halo</button>
+          <button class="acc-btn" data-acc="glasses">🕶 Glasses</button>
+        </div>
+      </div>
+
+      <!-- Play -->
+      <div class="card">
+        <div class="card-title">🎮 Play</div>
+        <div class="play-section">
+          <button class="btn btn-primary" id="createBtn">🏠 Create Room</button>
+          <div style="font-size:11px;color:var(--dim);text-align:center;letter-spacing:2px;">— OR JOIN —</div>
+          <div class="join-row">
+            <input type="text" id="joinCodeInput" placeholder="1234" maxlength="4" inputmode="numeric">
+            <button class="btn btn-secondary" id="joinBtn" style="width:auto;padding:12px 20px;">Join</button>
+          </div>
+          <div style="margin-top:8px; font-size:11px; color:var(--dim); line-height:1.6;">
+            <strong style="color:var(--accent2);">How to play:</strong> The host creates a room and shares the 4-digit code.
+            A tournament of 5 random minigames begins. Score points in each to win!
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;">
+            <span style="font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--dim);">🏃 Tag</span>
+            <span style="font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--dim);">💎 Collect</span>
+            <span style="font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--dim);">☠️ Survival</span>
+            <span style="font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--dim);">💥 Bumper</span>
+            <span style="font-size:10px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 8px;color:var(--dim);">+6 more</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══ LOBBY SCREEN ═══ -->
+<div class="screen hidden" id="screen_lobby">
+  <div class="lobby-inner">
+    <div class="game-title" style="font-size:28px;">LOBBY</div>
+
+    <div class="lobby-code-box">
+      <div>
+        <div class="lobby-code-label">Room Code</div>
+        <div id="roomCodeDisplay">----</div>
+      </div>
+      <button id="copyCodeBtn" title="Copy code">📋</button>
+    </div>
+
+    <div class="lobby-players-box">
+      <div class="lobby-box-title">Players</div>
+      <div id="playerList">
+        <div style="color:var(--dim);font-size:13px;padding:6px 0;">Waiting for players…</div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary hidden" id="startBtn">🚀 Start Tournament</button>
+    <button class="btn btn-ghost" onclick="document.getElementById('screen_lobby').classList.add('hidden'); document.getElementById('screen_home').classList.remove('hidden');">← Back</button>
+    <div style="font-size:11px;color:var(--dim);text-align:center;">Share the code with up to 8 friends. Host presses Start when ready.</div>
+  </div>
+</div>
+
+<!-- ═══ GAME SCREEN ═══ -->
+<div class="screen hidden" id="screen_game">
+  <div id="canvasContainer">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+  </div>
+</div>
+
+<!-- Countdown Overlay -->
+<div id="countdownOverlay" class="game-overlay hidden">
+  <div id="countdownMgName" class="cdo-mg">Minigame</div>
+  <div id="countdownNum">3</div>
+  <div id="countdownMgDesc" class="cdo-desc">Get ready!</div>
+</div>
+
+<!-- Results Overlay -->
+<div id="resultsOverlay" class="hidden" style="display:flex;flex-direction:column;align-items:stretch;gap:10px;">
+  <div id="resultsTitle">Results</div>
+  <div class="results-section-label">Minigame Standings</div>
+  <div id="resultsList"></div>
+  <hr class="results-divider">
+  <div class="results-section-label">Tournament Scores</div>
+  <div id="tournamentScoresList"></div>
+  <div style="font-size:11px;color:var(--dim);text-align:center;margin-top:4px;">Next game starting soon…</div>
+</div>
+
+<!-- ═══ PODIUM SCREEN ═══ -->
+<div class="screen hidden" id="screen_podium">
+  <div class="podium-title">🏆 TOURNAMENT COMPLETE!</div>
+  <div id="podiumPlayers"></div>
+  <div style="font-size:12px;color:var(--dim);text-align:center;">Thanks for playing Party Blitz!</div>
+  <button class="btn btn-primary" id="playAgainBtn" style="width:200px;">🎮 Play Again</button>
+</div>
+
+<!-- Game Controls (back button while in game) -->
+<div id="gameControls" class="hidden">
+  <button class="game-ctrl-btn" onclick="if(confirm('Leave game?')){location.reload()}">← Leave</button>
+</div>
+
+<!-- Virtual Joystick -->
+<div id="joystickArea" class="hidden">
+  <div id="joystick">
+    <div id="joystickThumb"></div>
+  </div>
+  <div style="font-size:10px;color:rgba(255,255,255,0.3);text-align:center;">Drag to move</div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/game.js"></script>
+</body>
+</html>
